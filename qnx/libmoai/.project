@@ -3,6 +3,7 @@
 	<name>libmoai</name>
 	<comment></comment>
 	<projects>
+		<project>lua</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
