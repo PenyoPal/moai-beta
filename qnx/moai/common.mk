@@ -38,7 +38,7 @@ CCFLAGS+=-fno-rtti -O0 -Wmissing-field-initializers -Wreturn-type -Wnon-virtual-
  -Woverloaded-virtual -Wformat -Wno-missing-braces -Wparentheses -Wswitch -Wunused-function -Wunused-label \
  -Wunused-parameter -Wunused-variable -Wunused-value -Wno-uninitialized -Wunknown-pragmas -Wshadow \
  -Wsign-compare
-CCFLAGS+=-shared -lang-c++
+CCFLAGS+=-lang-c++ 
 
 # Linker options for enhanced security
 LDFLAGS+=-Wl,-z,relro -Wl,-z,now $(if $(filter g so shared,$(VARIANTS)),,-pie)
