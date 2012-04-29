@@ -22,3 +22,10 @@ cmake_install.cmake
 *.o
 *.a
 src/moai/moai
+
+qnx/.metadata
+qnx/moai/x86
+qnx/moai/arm
+qnx/MoaiSample/arm
+qnx/MoaiSample/x86
+qnx/usb
