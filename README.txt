@@ -1,4 +1,4 @@
-Project structure: 
+Project structure:
 
 3rdparty - All of the 3rd party libraries we use.
 ant - Android reference projects.
@@ -7,9 +7,10 @@ samples - Lua and tools samples as well as some development test/experiment scri
 scons - Google Chrome
 src - Moai source code and headers.
 test - Lua stress tests for Moai. These were written to crash Moai. We'll be fixing Moai to handle more user errors gracefully (instead of crash) as the project develops.
+qnx - Blackberry/QNX reference projects.
 vs2008 - Visual Studio 2008 reference projects.
 vs2010 - Visual Studio 2010 reference projects.
-xcode - Mac OSX and iOS reference projects. 
+xcode - Mac OSX and iOS reference projects.
 
 Developing on Windows:
 
