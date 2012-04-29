@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>moai</name>
+	<name>MoaiSample</name>
 	<comment></comment>
 	<projects>
+		<project>moai</project>
+		<project>libmoai</project>
 		<project>lua</project>
 	</projects>
 	<buildSpec>
@@ -24,11 +26,11 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildArguments</key>
-					<value></value>
+					<value>${BUILDLISTS}</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildCommand</key>
-					<value>make</value>
+					<value>${QNX_HOST}/usr/bin/make</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.cleanBuildTarget</key>
