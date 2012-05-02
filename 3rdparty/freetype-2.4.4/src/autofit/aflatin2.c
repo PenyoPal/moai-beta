@@ -15,6 +15,7 @@
 /*                                                                         */
 /***************************************************************************/
 
+#ifndef MOAI_OS_QNX
 
 #include FT_ADVANCES_H
 
@@ -2341,5 +2342,5 @@
     (AF_Script_ApplyHintsFunc)  af_latin2_hints_apply
   )
 
-
 /* END */
+#endif
