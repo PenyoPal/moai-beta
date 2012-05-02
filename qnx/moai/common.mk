@@ -6,28 +6,14 @@ include $(QCONFIG)
 USEFILE=
 NAME=moai
 
-EXCLUDE_OBJS+=AKU-fmod.o AKU-debugger.o
+EXCLUDE_OBJS+=AKU-fmod.o AKU-debugger.o AKU-untz.o
 EXCLUDE_OBJS+=ftbase.o autofit.o bdf.o sfnt.o cff.o type42.o type1.o psaux.o \
   pcf.o ftcache.o ftzopen.o truetype.o ttsbit0.o pshinter.o pfr.o smooth.o \
-  psnames.o raster.o type1cid.o
+  psnames.o raster.o type1cid.o ls_sqlite3.o luasql.o
 EXTRA_OBJS+=inftrees.o
-#EXCLUDE_OBJS+=ftpic.o basepic.o ftadvanc.o ftcalc.o ftdbgmem.o \
-  ftgloadr.o ftobjs.o ftoutln.o ftrfork.o ftsnames.o ftstream.o fttrigon.o ftutil.o
-#EXCLUDE_OBJS+=afpic.o afangles.o afglobal.o afhints.o  afdummy.o aflatin.o \
-  afcjk.o afindic.o  afloader.o afmodule.o 
-#EXCLUDE_OBJS+=ttdriver.o tterrors.o ttgload.o ttgxvar.o ttinterp.o ttobjs.o \
-  ttpic.o ttpload.o ttdbf.o ttcmap.o ttmtx.o ttpost.o ttsbit.o ttsbit0.o 
-#EXCLUDE_OBJS+=sfdriver.o sfntpic.o sfobs.o
-#EXCLUDE_OBJS+=bdfdrivr.o 
-#EXCLUDE_OBJS+=cffcmap.o  cffdrivr.o
-#EXCLUDE_OBJS+=ftcbasic.o ftccmap.o ftcmanag.o
-#EXCLUDE_OBJS+=t42drivr.o cidriver.o psaux.o pshmod.o psnames.o ftraster.o ftrend1.o \
-  ftgrays.o ftsmooth.o pfrcmap.o pcfdrivr.o pfrdrivr.o t1driver.o ftzopen.o ftccache.o pshalgo.o
-  
-# Extra include path for libfreetype and for target overrides and patches
-#EXTRA_INCVPATH+=$(QNX_TARGET)/usr/include/freetype2
+
 	
-EXTRA_INCVPATH+=${QNX_TARGET}/usr/include/openssl $(PROJECT_ROOT)/3rdparty
+EXTRA_INCVPATH+=${QNX_TARGET}/usr/include/openssl $(PROJECT_ROOT)/3rdparty $(PROJECT_ROOT)
 EXTRA_INCVPATH+=$(PROJECT_ROOT)/3rdparty/box2d-2.2.1 \
   $(PROJECT_ROOT)/3rdparty/chipmunk-5.3.4/include $(PROJECT_ROOT)/3rdparty/tinyxml \
   $(PROJECT_ROOT)/3rdparty/jansson-2.1/src $(PROJECT_ROOT)/3rdparty/jpeg-8c \
@@ -41,7 +27,7 @@ EXTRA_INCVPATH+=$(PROJECT_ROOT)/3rdparty/box2d-2.2.1 \
   $(PROJECT_ROOT)/3rdparty/luafilesystem-1.5.0/src \
   $(PROJECT_ROOT)/3rdparty/luacrypto-0.2.0/src \
   $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/include  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/gzip
-EXTRA_INCVPATH+= ${QNX_TARGET}/usr/include $(QNX_TARGET)/../target-override/usr/include 
+EXTRA_INCVPATH+= ${QNX_TARGET}/usr/include $(QNX_TARGET)/../target-override/usr/include
   
 # Extra library search path for target overrides and patches
 EXTRA_LIBVPATH+=$(QNX_TARGET)/../target-override/$(CPUVARDIR)/lib \
@@ -61,28 +47,9 @@ EXTRA_SRCVPATH+=$(PROJECT_ROOT)/src/moaicore $(PROJECT_ROOT)/src/uslscore \
     $(PROJECT_ROOT)/3rdparty/chipmunk-5.3.4/src $(PROJECT_ROOT)/3rdparty/chipmunk-5.3.4/src/constraints \
     $(PROJECT_ROOT)/3rdparty/luacurl-1.2.1 $(PROJECT_ROOT)/3rdparty/lua-5.1.3/src  \
     $(PROJECT_ROOT)/3rdparty/luasocket-2.0.2/src $(PROJECT_ROOT)/3rdparty/luafilesystem-1.5.0/src \
-    $(PROJECT_ROOT)/3rdparty/luacrypto-0.2.0/src $(PROJECT_ROOT)/3rdparty/luasql-2.2.0/src \
+    $(PROJECT_ROOT)/3rdparty/luacrypto-0.2.0/src \
     $(PROJECT_ROOT)/3rdparty/zlib-1.2.3 
-    
-#SRCS+=$(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/autofit/autofit.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/bdf/bdf.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cff/cff.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftbase.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftbitmap.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cache/ftcache.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftfstype.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftgasp.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftglyph.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/gzip/ftgzip.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftinit.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/lzw/ftlzw.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftstroke.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftsystem.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/smooth/smooth.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftbbox.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftgxval.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftlcdfil.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftmm.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftotval.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftpatent.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftpfr.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/ftsynth.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base/fttype1.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/pcf/pcf.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/pfr/pfr.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/psaux/psaux.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/pshinter/pshinter.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/psnames/psmodule.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/raster/raster.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/sfnt/sfnt.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/truetype/truetype.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/type1/type1.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cid/type1cid.c \
-  $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/type42/type42.c $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/winfonts/winfnt.c    
-
+# $(PROJECT_ROOT)/3rdparty/luasql-2.2.0/src 
 EXTRA_SRCVPATH+=$(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/autofit/ \
     $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/bdf $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cff \
     $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cache $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/gzip \
@@ -93,7 +60,7 @@ EXTRA_SRCVPATH+=$(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/base $(PROJECT_ROOT)
     $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/sfnt $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/type1 \
     $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/cid $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/type42 \
     $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/lzw $(PROJECT_ROOT)/3rdparty/freetype-2.4.4/src/winfonts
-    
+SRCS+=$(PROJECT_ROOT)/3rdparty/luasql-2.2.0/src/ls_sqlite3.c $(PROJECT_ROOT)/3rdparty/luasql-2.2.0/src/luasql.c 
 # Compiler options for enhanced security and recording the compiler options in release builds
 CCFLAGS+=-fstack-protector-all -D_FORTIFY_SOURCE=2 \
 	$(if $(filter g so shared,$(VARIANTS)),,-fPIE) \

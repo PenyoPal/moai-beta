@@ -1,0 +1,3 @@
+ln -s ../../src src
+ln -s ../../3rdparty 3rdparty
+make
