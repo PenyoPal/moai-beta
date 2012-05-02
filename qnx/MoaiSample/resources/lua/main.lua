@@ -54,4 +54,3 @@ end
 
 thread = MOAIThread.new ()
 thread:run ( twirlingTowardsFreedom )
-print ( "Running", thread )

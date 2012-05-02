@@ -35,7 +35,7 @@ CCFLAGS+=-DUSING_GL20 -DMOAI_OS_QNX
 LDFLAGS+=-Wl,-z,relro -Wl,-z,now $(if $(filter g so shared,$(VARIANTS)),,-pie)
 
 # Add your required library names, here
-LIBS+=GLESv2 EGL screen png bps moai #GLESv1_CM
+LIBS+=GLESv2 EGL screen png bps moai
 
 include $(MKFILES_ROOT)/qmacros.mk
 

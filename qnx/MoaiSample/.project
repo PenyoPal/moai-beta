@@ -4,8 +4,6 @@
 	<comment></comment>
 	<projects>
 		<project>moai</project>
-		<project>libmoai</project>
-		<project>lua</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -26,11 +24,11 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildArguments</key>
-					<value>${BUILDLISTS}</value>
+					<value></value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildCommand</key>
-					<value>${QNX_HOST}/usr/bin/make</value>
+					<value>make</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.cleanBuildTarget</key>
@@ -62,7 +60,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.useDefaultBuildCmd</key>
-					<value>true</value>
+					<value>false</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>

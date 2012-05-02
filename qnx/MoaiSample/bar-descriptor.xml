@@ -13,23 +13,23 @@
 
     <!-- The name that is displayed in the BlackBerry Tablet OS application installer. 
          May have multiple values for each language. See samples or xsd schema file. Optional. -->
-    <name>Restaurant</name>
+    <name>MoaiSample</name>
     
     <!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
          Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
          An updated version of application must have a versionNumber value higher than the previous version. Required. -->
     <versionNumber>1.0.0</versionNumber>
+    <buildId>0</buildId>
 
     <!-- Fourth digit segment of the package version. First three segments are taken from the 
          <versionNumber> element.  Must be an integer from 0 to 2^16-1 -->
-    <buildId>1</buildId>
                  
     <!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
     <!-- <versionLabel></versionLabel> -->
 
     <!-- Description, displayed in the BlackBerry Tablet OS application installer.
          May have multiple values for each language. See samples or xsd schema file. Optional. -->
-    <description>The PenyoPal restaurant game</description>
+    <description>Moai Sample project</description>
 
     <!-- Copyright information. Optional. -->
     <!-- <copyright></copyright> -->
@@ -37,6 +37,9 @@
     <!--  Name of author which is used for signing. Must match the developer name of your development certificate. -->
     <author>PenyoPal</author>
     <authorId>gYAAgNFYCzwTAndtkrtS8qYugc4</authorId>
+    <icon>
+       <image>icon.png</image>
+    </icon>
     
     <!--  Unique author ID assigned by signing authority. Required if using debug tokens. -->
     <!-- <authorId>ABC1234YjsnUk235h</authorId> -->
@@ -55,12 +58,13 @@
        <platformArchitecture>armle-v7</platformArchitecture>
        <asset path="arm/o.le-v7-g/MoaiSample" entry="true" type="Qnx/Elf">MoaiSample</asset>
        <asset path="${workspace_loc:/moai/arm/so.le-v7-g/libmoai.so}" type="Qnx/Elf">lib/libmoai.so.1</asset>
-       <asset path="${workspace_loc:/moai/arm/so.le-v7/libmoai.so}" type="Qnx/Elf">lib/libmoai.so</asset>
+       <asset path="${workspace_loc:/moai/arm/so.le-v7-g/libmoai.so}" type="Qnx/Elf">lib/libmoai.so</asset>
     </configuration>
     <configuration id="com.qnx.qcc.toolChain.1140326234" name="Device-Debug">
        <platformArchitecture>armle-v7</platformArchitecture>
        <asset path="arm/o.le-v7-g/MoaiSample" entry="true" type="Qnx/Elf">MoaiSample</asset>
        <asset path="${workspace_loc:/moai/arm/so.le-v7-g/libmoai.so}" type="Qnx/Elf">lib/libmoai.so.1</asset>
+       <asset path="${workspace_loc:/moai/arm/so.le-v7-g/libmoai.so}" type="Qnx/Elf">lib/libmoai.so</asset>
     </configuration>
     <configuration id="com.qnx.qcc.toolChain.1328136066" name="Device-Release">
        <platformArchitecture>armle-v7</platformArchitecture>
@@ -73,21 +77,16 @@
        <asset path="x86/o-g/MoaiSample" entry="true" type="Qnx/Elf">MoaiSample</asset>
        <asset path="${workspace_loc:/moai/x86/so/libmoai.so}" type="Qnx/Elf">lib/libmoai.so.1</asset>
        <asset path="${workspace_loc:/moai/x86/so/libmoai.so}" type="Qnx/Elf">lib/libmoai.so</asset>
+       <asset path="${workspace_loc:/moai/x86/so/libmoai.so}" type="Qnx/Elf">lib/libmoai.so</asset>
     </configuration>
     
     <!--  The icon for the application, which should be 86x86. -->
-    <icon>
-        <image>icon.png</image>
-    </icon>
     
     <!--  The splash screen that will appear when your application is launching. Should be 1024x600. -->
     <!-- <splashscreen></splashscreen> -->
 
     <!-- Request permission to execute native code.  Required for native applications. -->
     <action system="true">run_native</action>
-    <action>set_audio_volume</action>
-    <action>play_audio</action>
-    <action>access_shared</action>
     
     <!--  The permissions requested by your application. -->
     <!--  <action>access_shared</action> -->

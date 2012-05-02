@@ -81,7 +81,7 @@
 							<option id="com.qnx.qcc.option.compiler.1533785433" name="Compiler:" superClass="com.qnx.qcc.option.compiler"/>
 							<option id="com.qnx.qcc.option.runtime.775471391" name="Runtime:" superClass="com.qnx.qcc.option.runtime"/>
 							<targetPlatform archList="all" binaryParser="com.qnx.tools.ide.qde.core.QDEBynaryParser" id="com.qnx.qcc.targetPlatform.495310897" osList="all" superClass="com.qnx.qcc.targetPlatform"/>
-							<builder id="qnx.recursive.target.builder.1825514396" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="QNX Recursive Make Builder" superClass="qnx.recursive.target.builder"/>
+							<builder arguments="" command="make" id="qnx.recursive.target.builder.1825514396" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="QNX Recursive Make Builder" superClass="qnx.recursive.target.builder"/>
 							<tool id="com.qnx.qcc.tool.compiler.2139034345" name="QCC Compiler" superClass="com.qnx.qcc.tool.compiler">
 								<option id="com.qnx.qcc.option.compiler.optlevel.798504054" name="Optimization Level" superClass="com.qnx.qcc.option.compiler.optlevel" value="com.qnx.qcc.option.compiler.optlevel.0" valueType="enumerated"/>
 								<option id="com.qnx.qcc.option.compiler.includePath.324308690" name="Include Directories (-I)" superClass="com.qnx.qcc.option.compiler.includePath" valueType="includePath">
