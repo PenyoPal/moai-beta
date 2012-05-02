@@ -6,6 +6,12 @@
 	#include <gl/glew.h>
 #endif
 
+#ifdef MOAI_OS_QNX
+	#include <GLES2/gl2.h>
+	#include <GLES2/gl2ext.h>
+	#undef USE_OPENGLES1
+#endif
+
 #ifdef MOAI_OS_OSX
 	//#include <GL/glew.h>
 	#include <OpenGL/gl.h>

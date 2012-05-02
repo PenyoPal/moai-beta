@@ -32,7 +32,11 @@
 		#define MOAI_PHONE
 		#define MOAI_OS_ANDROID
 	#endif
-
+#elif defined( __QNX__ )
+	#ifndef MOAI_OS_QNX
+		#define MOAI_OS_QNX
+	#endif
+	#define MOAI_PHONE
 #else
 	#define MOAI_OS_UNKNOWN
 
@@ -79,7 +83,7 @@
 	#endif
 #endif
 
-#ifdef MOAI_OS_LINUX
+#if defined ( MOAI_OS_LINUX ) || defined ( MOAI_OS_QNX )
 	#include <unistd.h>
 #endif
 

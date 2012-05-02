@@ -4,6 +4,10 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#ifdef MOAI_OS_QNX
+#include <pthread.h>
+#include <sched.h>
+#endif
 #include <uslscore/USMutex.h>
 
 class USThreadImpl;

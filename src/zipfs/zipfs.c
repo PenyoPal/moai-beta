@@ -1101,7 +1101,7 @@ int zipfs_dir_read_entry ( ZIPFSDIR* dir ) {
 		struct dirent* entry = readdir ( self->mHandle );
 		if ( entry ) {
 			self->mName = entry->d_name;
-#ifndef NACL
+#if !defined( NACL ) && !defined( MOAI_OS_QNX )
 			self->mIsDir = ( entry->d_type == DT_DIR ) ? 1 : 0;
 #else
 			self->mIsDir = 1;

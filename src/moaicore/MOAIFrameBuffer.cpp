@@ -26,7 +26,7 @@ int MOAIFrameBuffer::_init ( lua_State* L ) {
 	u32 height				= state.GetValue < u32 >( 3, 0 );
 	
 	// TODO: fix me
-	#ifdef MOAI_OS_ANDROID
+	#if defined ( MOAI_OS_ANDROID ) || defined ( MOAI_OS_QNX )
 		GLenum colorFormat		= state.GetValue < GLenum >( 4, GL_RGB565 );
 	#else
 		GLenum colorFormat		= state.GetValue < GLenum >( 4, GL_RGBA8 );

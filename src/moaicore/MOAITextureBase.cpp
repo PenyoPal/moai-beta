@@ -501,7 +501,7 @@ void MOAITextureBase::RegisterLuaClass ( MOAILuaState& state ) {
 	//***state.SetField ( -1, "GL_STENCIL_INDEX16",		( u32 )GL_STENCIL_INDEX16 );
 	
 	// TODO:
-	#ifdef MOAI_OS_ANDROID
+	#if defined ( MOAI_OS_ANDROID ) || defined ( MOAI_OS_QNX )
 		state.SetField ( -1, "GL_RGB565",				( u32 )GL_RGB565 );
 	#else
 		state.SetField ( -1, "GL_RGBA8",				( u32 )GL_RGBA8 );
