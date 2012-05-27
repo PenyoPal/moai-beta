@@ -208,37 +208,12 @@ zhTextBox:setString ( "" )
 layer:insertProp ( zhTextBox )
 -- ]]
 
--- Sound Setup [[
+
 local nChan = 1
+local unit = 3
 local freq = 16000
-local unit = 5
 
 MOAIUntzSystem.initialize ( freq, 8192, MOAIUntzSystem.RECORDABLE )
-print ( "Sampling at ", MOAIUntzSystem.getSampleRate ( ) )
-
-local sampler = MOAIAudioSampler.new ( )
-sampler:setFrequency ( freq )
-sampler:setNumChannels ( nChan )
-sampler:prepareBuffer ( unit, 10 )
-sampler:start ( )
-sampler:pause ( )
-
-local playbuf = MOAIUntzSampleBuffer.new ( )
-playbuf:prepareBuffer ( nChan, freq * unit * 3, freq )
-
-local snd = MOAIUntzSound.new ( )
-snd:load ( playbuf )
-snd:setVolume ( 1 )
-snd:setLooping ( false )
-snd:play ( )
-
--- ]]
-
-local tape = {}
-local recording = false
-local played = true
-local started = false
-local choices = {}
 
 -- Helper functions [[
 local function setPrompt ( )
@@ -260,6 +235,10 @@ local function reduce ( tbl, init, func )
   end
   return acc
 end
+
+-- ]]]
+
+-- Edit distance functions [[[
 
 local function edit_distance ( word1, word2 )
   dist = 0
@@ -293,48 +272,117 @@ local function determine_phrase ( hyps )
   return best
 end
 
-local function addData ( )
-  local data = sampler:read ( "short" )
+-- ]]
+
+-- Recording functions [[[
+local Recorder = {recording = false, tape = {}, nChan = nChan, freq = freq, unit = unit }
+
+function Recorder:addData ( )
+  local data = self.sampler:read ( "short" )
   if data and type ( data ) == "table" then
     print ( "Recording..." )
-    table.insert ( tape,  data )
+    table.insert ( self.tape,  data )
   end
 end
 
+function Recorder:init ( )
+  self.sampler = MOAIAudioSampler.new ( )
+  self.sampler:setFrequency ( self.freq )
+  self.sampler:setNumChannels ( self.nChan )
+  self.sampler:prepareBuffer ( unit, 10 )
+end
+
+function Recorder:recordSample ( )
+  self.recording = true
+  self.tape = { }
+  self.sampler:start ( )
+
+  self.th = MOAIThread.new ( )
+  self.th:run ( function ( )
+    while self.recording do
+      self:addData ( )
+      coroutine.yield ( )
+    end
+  end )
+end
+
+function Recorder:getSample ( )
+  local sample = {}
+  for i = 1, #self.tape do
+    for j = 1, #self.tape[i] do
+      table.insert ( sample, self.tape[i][j] )
+    end
+  end
+  print ( "Giving sample of size ", #sample )
+  return sample
+end
+
+function Recorder:stopSampling ( )
+  self.recording = false
+  self:addData ( )
+  self.sampler:stop ( )
+  print ( "Done sampling ", #self.tape, "samples" )
+end
+-- ]]]
+
+-- Playback [[
+local function playback ( )
+  local sample = Recorder:getSample ( )
+  local audio_sample = {}
+  for i, v in ipairs ( sample ) do
+    audio_sample[i] = v / 32767
+    --table.insert ( audio_sample, v / 32767 )
+  end
+  print ( "Audio sample size", #audio_sample )
+
+  local playbuf = MOAIUntzSampleBuffer.new ( )
+  playbuf:prepareBuffer ( nChan, freq * unit * 3, freq )
+
+  local snd = MOAIUntzSound.new ( )
+  snd:load ( playbuf )
+  snd:setVolume ( 1 )
+  snd:setLooping ( false )
+  snd:play ( )
+
+  playbuf:setData ( audio_sample, 1 )
+  snd:setPosition ( 0 )
+  snd:play ( )
+
+  local hyp1, hyp2, hyp3 = MOAISphinx:analyze_utterance ( #sample, sample )
+  local best_guess = determine_phrase ( { hyp1, hyp2, hyp3 } )
+  local msg = "Sounds like (tap to record again)\n"
+  msg = msg .. hyp1 .. phrase2pinyin ( hyp1 ) .."\nor\n" .. hyp2 .. phrase2pinyin ( hyp2 ) .. "\nor\n" .. hyp3 .. phrase2pinyin ( hyp3 )
+  msg = msg .. "\nBest match is\n" .. best_guess .. "(" .. phrase2pinyin ( best_guess ) .. ")"
+  zhTextBox:setString ( msg )
+
+end
 -- ]]
 
 -- Input callback [[
-if MOAIInputMgr.device.pointer then
-  MOAIInputMgr.device.mouseLeft:setCallback ( function ( down )
-    recording = not recording
-    if recording then
-      enTextBox:setString ( "SPEAK (tap to analyze)" )
-    else
-      enTextBox:setString ( "Analyzing..." )
-    end
-  end )
-elseif MOAIInputMgr.device.touch then
+local recording = false
+if MOAIInputMgr.device.touch then
+  print ( "Touch device go" )
   -- For a touch interface
   MOAIInputMgr.device.touch:setCallback (
   function ( eventType, idx, x, y, tapCount )
+    print ( "Pressed" )
     if eventType == MOAITouchSensor.TOUCH_UP then
-      print ( "Touched" )
-      recording = not recording
-      if recording then
+      if not recording then
+        recording = true
         print ( "Starting recording" )
-        local foo = sampler:read ( "raw" ) -- Clear buffer
-        print ( "Foo nil?", foo == nil )
-        sampler:resume ( )
-        zhTextBox:setString ( "Recording...")
+        recording = true
+        Recorder:init ( )
+        print ( "Inited" )
+        Recorder:recordSample ( )
+        print ( "Recording..." )
       else
+        recording = false
         print ( "Stopping recording" )
-        sampler:pause ( )
-        addData ( )
-        zhTextBox:setString ( "Analyzing..." )
+        Recorder:stopSampling ( )
+        playback ( )
       end
     end
-  end
-  )
+  end )
 end
 
 -- ]]
@@ -342,51 +390,3 @@ end
 setPrompt ( )
 
 zhTextBox:setString ( "Waiting...")
-
--- Main thread [[
-th = MOAIThread.new ( )
-th:run( function()
-  while true do
-    if recording then
-      played = false
-      addData ( )
-    elseif not played then
-      played = true
-      print ( "Analyzing" )
-      local sample = {}
-      for i = 1, #tape do
-        for j = 1, #tape[i] do
-          table.insert ( sample, tape[i][j] )
-        end
-      end
-      tape = {}
-      print ( "Tape len", #tape, "sample len", #sample )
-      local hyp1, hyp2, hyp3 = MOAISphinx:analyze_utterance ( #sample, sample )
-      print ( "Playing" )
-      if sample then
-        audio_sample = {}
-        for i, v in ipairs ( sample ) do
-          audio_sample[i] = v / 32767
-          --table.insert ( audio_sample, v / 32767 )
-        end
-        print ( "Audio sample size", #audio_sample )
-
-        playbuf:setData ( audio_sample, 1 )
-        snd:setPosition ( 0 )
-        snd:play ( )
-
-        local best_guess = determine_phrase ( { hyp1, hyp2, hyp3 } )
-        local msg = "Sounds like (tap to record again)\n"
-        msg = msg .. hyp1 .. phrase2pinyin ( hyp1 ) .."\nor\n" .. hyp2 .. phrase2pinyin ( hyp2 ) .. "\nor\n" .. hyp3 .. phrase2pinyin ( hyp3 )
-        msg = msg .. "\nBest match is\n" .. best_guess .. "(" .. phrase2pinyin ( best_guess ) .. ")"
-        zhTextBox:setString ( msg )
-
-        --setPrompt ( )
-      end
-      collectgarbage ( )
-    end
-
-    coroutine.yield ( )
-  end
-end)
--- ]]
