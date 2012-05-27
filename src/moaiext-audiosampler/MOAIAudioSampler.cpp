@@ -258,6 +258,14 @@ int	MOAIAudioSampler::_read ( lua_State* L ) {
     lua_pushnil(L);
     return 1;    
 }
+int MOAIAudioSampler::_flush ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAIAudioSampler, "U")
+		;
+	AudioQueueFlush ( self->queue );
+	
+	return 0;
+}
+
 int MOAIAudioSampler::_stop ( lua_State* L ) {
     MOAI_LUA_SETUP ( MOAIAudioSampler, "U" )
         ;
@@ -300,7 +308,8 @@ void MOAIAudioSampler::RegisterLuaFuncs ( MOAILuaState& state ) {
 		{ "read",				_read },
 		{ "stop",				_stop },
 		{ "pause",				_pause },
-		{ "resume",				_resume },                
+		{ "resume",				_resume },    
+		{ "flush",              _flush },
 		{ NULL, NULL }
 	};
 
