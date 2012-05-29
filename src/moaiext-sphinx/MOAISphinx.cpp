@@ -95,7 +95,7 @@ MOAISphinx::~MOAISphinx() {
 void MOAISphinx::RegisterLuaClass(MOAILuaState& state) {
 	luaL_Reg regTable[] = {
 		{ "analyze_utterance", _analyze_utterance },
-		{ "inititalize_sphinx", _initialize_sphinx },
+		{ "initialize_sphinx", _initialize_sphinx },
 		{ NULL, NULL }
 	};
 	
