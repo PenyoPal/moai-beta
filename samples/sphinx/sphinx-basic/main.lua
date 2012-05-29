@@ -181,7 +181,7 @@ zhFontCache = MOAIGlyphCache.new ( )
 zhFont:setCache ( zhFontCache )
 
 print ( "MOAISphinx", MOAISphinx )
-MOAISphinx:inititalize_sphinx ( )
+--MOAISphinx: initialize_sphinx ( )
 
 layer = MOAILayer2D.new ()
 layer:setViewport ( viewport )
@@ -275,13 +275,21 @@ end
 -- ]]
 
 -- Recording functions [[[
-local Recorder = {recording = false, tape = {}, nChan = nChan, freq = freq, unit = unit }
+local Recorder = {
+  recording = false, tape = {}, nChan = nChan, freq = freq, unit = unit,
+  sampleMax = 0
+}
 
 function Recorder:addData ( )
   local data = self.sampler:read ( "short" )
   if data and type ( data ) == "table" then
     print ( "Recording..." )
     table.insert ( self.tape,  data )
+    for i, val in ipairs ( data ) do
+      if math.abs ( val ) > self.sampleMax then
+        self.sampleMax = math.abs ( val )
+      end
+    end
   end
 end
 
@@ -307,10 +315,16 @@ function Recorder:recordSample ( )
 end
 
 function Recorder:getSample ( )
+  local threshold = self.sampleMax * 0.01
+  local skippedEmpty = false
   local sample = {}
   for i = 1, #self.tape do
     for j = 1, #self.tape[i] do
-      table.insert ( sample, self.tape[i][j] )
+      if skippedEmpty then
+        table.insert ( sample, self.tape[i][j] )
+      elseif math.abs ( self.tape[i][j] ) > threshold then
+        skippedEmpty = true
+      end
     end
   end
   print ( "Giving sample of size ", #sample )
@@ -319,6 +333,7 @@ end
 
 function Recorder:stopSampling ( )
   self.recording = false
+  self.sampler:flush ( )
   self:addData ( )
   self.sampler:stop ( )
   print ( "Done sampling ", #self.tape, "samples" )
@@ -327,11 +342,12 @@ end
 
 -- Playback [[
 local function playback ( )
+  zhTextBox:setString ( "Playing back..." )
   local sample = Recorder:getSample ( )
+  print ( "Sample is length", #sample )
   local audio_sample = {}
   for i, v in ipairs ( sample ) do
     audio_sample[i] = v / 32767
-    --table.insert ( audio_sample, v / 32767 )
   end
   print ( "Audio sample size", #audio_sample )
 
@@ -347,6 +363,8 @@ local function playback ( )
   playbuf:setData ( audio_sample, 1 )
   snd:setPosition ( 0 )
   snd:play ( )
+
+  zhTextBox:setString ( "Analyzing..." )
 
   local hyp1, hyp2, hyp3 = MOAISphinx:analyze_utterance ( #sample, sample )
   local best_guess = determine_phrase ( { hyp1, hyp2, hyp3 } )
@@ -370,6 +388,7 @@ if MOAIInputMgr.device.touch then
       if not recording then
         recording = true
         print ( "Starting recording" )
+        zhTextBox:setString ( "Recording..." )
         recording = true
         Recorder:init ( )
         print ( "Inited" )
