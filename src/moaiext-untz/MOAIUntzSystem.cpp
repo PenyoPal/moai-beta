@@ -93,15 +93,11 @@ int MOAIUntzSystem::_initialize ( lua_State* L ) {
 }
 
 int MOAIUntzSystem::_suspend ( lua_State* L ) {
-	if ( UNTZ::System::get() ) {
-		UNTZ::System::get()->suspend();
-	}
+	UNTZ::System::get()->suspend();
 }
 
 int MOAIUntzSystem::_shutdown ( lua_State* L ) {
-	if (UNTZ::System::get()) {
-		UNTZ::System::get ()->shutdown ();
-	}
+	UNTZ::System::get ()->shutdown ();
 }
 
 //----------------------------------------------------------------//
