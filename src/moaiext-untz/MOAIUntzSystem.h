@@ -34,6 +34,8 @@ private:
 	static int		_setSampleRate			( lua_State* L );
 	static int		_setVolume				( lua_State* L );
 	static int		_getVolume				( lua_State* L );
+	static int		_shutdown               ( lua_State* L );
+	static int		_suspend				( lua_State* L );
 public:
 
 	DECL_LUA_SINGLETON ( MOAIUntzSystem )

@@ -96,8 +96,9 @@ static OSStatus playbackCallback(void *userData,
 	// Don't do anything if the system is NOT active (zero buffer)
 	if(!sysData->isActive())
 	{	
-		SInt16 *outbuf = (SInt16 *) outBuffer->mBuffers[0].mData;
+		/*SInt16 *outbuf = (SInt16 *) outBuffer->mBuffers[0].mData;
 		memset(outbuf, 0, sizeof(SInt16) * framesPerBuffer * sysData->getNumOutputChannels());
+		 */
 		return 0;
 	}
 		

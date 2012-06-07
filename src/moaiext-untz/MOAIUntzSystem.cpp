@@ -92,6 +92,14 @@ int MOAIUntzSystem::_initialize ( lua_State* L ) {
 	return 0;
 }
 
+int MOAIUntzSystem::_suspend ( lua_State* L ) {
+	UNTZ::System::get()->suspend();
+}
+
+int MOAIUntzSystem::_shutdown ( lua_State* L ) {
+	UNTZ::System::get ()->shutdown ();
+}
+
 //----------------------------------------------------------------//
 // placeholder
 int MOAIUntzSystem::_setInputDevice ( lua_State* L ) {
@@ -202,6 +210,8 @@ void MOAIUntzSystem::RegisterLuaClass ( MOAILuaState& state ) {
 		{ "setSampleRate",			_setSampleRate },
 		{ "setVolume",				_setVolume },
 		{ "getVolume",				_getVolume },
+		{ "shutdown",				_shutdown },
+		{ "suspend",				_suspend },
 		{ NULL, NULL }
 	};
 
