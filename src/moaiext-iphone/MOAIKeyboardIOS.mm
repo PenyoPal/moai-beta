@@ -226,7 +226,8 @@ void MOAIKeyboardIOS::ShowKeyboard ( cc8* text, int type, int returnKey, bool se
 	
 	[ this->mTextField setAutocapitalizationType:( UITextAutocapitalizationType )autocap ];
 	[ this->mTextField setAutocorrectionType:UITextAutocorrectionTypeNo ];
-	[ this->mTextField setSpellCheckingType:UITextSpellCheckingTypeNo ];
+	if ([this->mTextField respondsToSelector:@selector(setSpellCheckingType:)])
+		[ this->mTextField setSpellCheckingType:UITextSpellCheckingTypeNo ];
 	[ this->mTextField setEnablesReturnKeyAutomatically:NO ];
 	[ this->mTextField setKeyboardAppearance:( UIKeyboardAppearance )appearance ];
 	[ this->mTextField setKeyboardType:( UIKeyboardType )type ];
