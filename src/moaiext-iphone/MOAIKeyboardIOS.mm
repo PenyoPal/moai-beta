@@ -17,6 +17,7 @@
 	-( void )	onChanged					:( NSString* )string;
 	-( BOOL )	textField					:( UITextField* )textField shouldChangeCharactersInRange:( NSRange )range replacementString:( NSString* )string;
 	-( BOOL )	textFieldShouldReturn		:( UITextField* )textField;
+	-( void )	textFieldDidEndEditing		:(UITextField *)textField;
 
 @end
 
@@ -67,6 +68,28 @@
 		return result;
 	}
 
+	//----------------------------------------------------------------//
+	-( void ) textFieldDidEndEditing:(UITextField *)textField {
+		UNUSED ( textField );
+		
+		BOOL result = YES;
+		
+		MOAILuaStateHandle state = MOAILuaRuntime::Get ().State ();
+		MOAIKeyboardIOS& keyboard = MOAIKeyboardIOS::Get ();
+		
+		if ( keyboard.PushListener ( MOAIKeyboardIOS::EVENT_RETURN, state )) {
+			state.DebugCall ( 0, 1 );
+			result = state.GetValue < bool >( -1, true );
+		}
+		
+		if ( result ) {
+			keyboard.Finish ();
+		}
+		
+		return;		
+	}
+
+
 @end
 
 //================================================================//
@@ -88,7 +111,7 @@ int MOAIKeyboardIOS::_getText ( lua_State* L ) {
 
 //----------------------------------------------------------------//
 /**	@name	showKeyboard
-	@text	Show the native software keyboard to the use.
+	@text	Show the native software keyboard to the user.
 
 	@opt	string text			Text to edit (if any). Default value is ''.
 	@opt	number type			One of MOAIKeyboardIOS.KEYBOARD_ASCII, MOAIKeyboardIOS.KEYBOARD_DECIMAL_PAD, MOAIKeyboardIOS.KEYBOARD_DEFAULT,
@@ -117,6 +140,20 @@ int MOAIKeyboardIOS::_showKeyboard ( lua_State* L ) {
 	int appearance		= state.GetValue < int >( 6, APPEARANCE_DEFAULT );
 	
 	MOAIKeyboardIOS::Get ().ShowKeyboard ( text, type, returnKey, secure, autocap, appearance );
+	
+	return 0;
+}
+
+//----------------------------------------------------------------//
+/**	@name	showKeyboard
+ @text	Dismiss the native software keyboard.
+ 
+ @out	nil
+*/
+int MOAIKeyboardIOS::_dismissKeyboard ( lua_State* L ) {
+	MOAILuaState state ( L );
+	
+	MOAIKeyboardIOS::Get().Finish();
 	
 	return 0;
 }
@@ -202,6 +239,7 @@ void MOAIKeyboardIOS::RegisterLuaClass ( MOAILuaState& state ) {
 		{ "getText",			_getText },
 		{ "setListener",		&MOAIGlobalEventSource::_setListener < MOAIKeyboardIOS > },
 		{ "showKeyboard",		_showKeyboard },
+		{ "dismissKeyboard",	_dismissKeyboard },
 		{ NULL, NULL }
 	};
 
@@ -226,7 +264,8 @@ void MOAIKeyboardIOS::ShowKeyboard ( cc8* text, int type, int returnKey, bool se
 	
 	[ this->mTextField setAutocapitalizationType:( UITextAutocapitalizationType )autocap ];
 	[ this->mTextField setAutocorrectionType:UITextAutocorrectionTypeNo ];
-	[ this->mTextField setSpellCheckingType:UITextSpellCheckingTypeNo ];
+	if ([this->mTextField respondsToSelector:@selector(setSpellCheckingType:)])
+		[ this->mTextField setSpellCheckingType:UITextSpellCheckingTypeNo ];
 	[ this->mTextField setEnablesReturnKeyAutomatically:NO ];
 	[ this->mTextField setKeyboardAppearance:( UIKeyboardAppearance )appearance ];
 	[ this->mTextField setKeyboardType:( UIKeyboardType )type ];

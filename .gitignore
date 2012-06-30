@@ -15,6 +15,8 @@ DerivedData/
 *.pbxuser
 *.perspectivev3
 
+xcode/libmoai/jsgf_scanner.h
+
 # Artifacts when building with CMake
 CMakeFiles
 CMakeCache.txt
