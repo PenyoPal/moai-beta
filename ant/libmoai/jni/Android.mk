@@ -9,7 +9,7 @@
 
 	include ArmModeDefined.mk
 	include OptionalComponentsDefined.mk
-	
+
 	#----------------------------------------------------------------#
 	# set moai root
 	#----------------------------------------------------------------#
@@ -26,11 +26,11 @@
 	LOCAL_ARM_MODE 	:= $(MY_ARM_MODE)
 	LOCAL_LDLIBS 	:= -llog -lGLESv1_CM -lGLESv2 crypto/libs/$(TARGET_ARCH_ABI)/libcrypto.a
 	LOCAL_CFLAGS	:= $(DISABLE_ADCOLONY) $(DISABLE_BILLING) $(DISABLE_CHARTBOOST) $(DISABLE_CRITTERCISM) $(DISABLE_FACEBOOK) $(DISABLE_NOTIFICATIONS) $(DISABLE_TAPJOY)
-	
+
 #----------------------------------------------------------------#
 # header search paths
 #----------------------------------------------------------------#
-	
+
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/src
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/src/aku
@@ -86,6 +86,8 @@
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/3rdparty/untz/src
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/3rdparty/untz/src/native/android
 	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/3rdparty/3rdparty/zlib-1.2.3
+	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/3rdparty/sphinxbase-0.7/include
+	MY_HEADER_SEARCH_PATHS += $(MY_MOAI_ROOT)/3rdparty/pocketsphinx-0.7/include
 
 #----------------------------------------------------------------#
 # source files
@@ -104,6 +106,7 @@
 
 	LOCAL_STATIC_LIBRARIES += libmoaiext-android
 	LOCAL_STATIC_LIBRARIES += libmoaiext-luaext
+	LOCAL_STATIC_LIBRARIES += libmoaiext-sphinx
 	LOCAL_STATIC_LIBRARIES += libmoaiext-untz
 
 	LOCAL_STATIC_LIBRARIES += libbox2D
@@ -122,6 +125,8 @@
 	LOCAL_STATIC_LIBRARIES += libvorbis
 	LOCAL_STATIC_LIBRARIES += libogg
 	LOCAL_STATIC_LIBRARIES += libzlcore
+	LOCAL_STATIC_LIBRARIES += libsphinxbase
+	LOCAL_STATIC_LIBRARIES += libpocketsphinx
 
 	include $(BUILD_SHARED_LIBRARY)
 
@@ -142,6 +147,7 @@
 	include moaiext-android/Android.mk
 	include moaiext-luaext/Android.mk
 	include moaiext-untz/Android.mk
+	include moaiext-sphinx/Android.mk
 	include ogg/Android.mk
 	include png/Android.mk
 	include sqlite/Android.mk
