@@ -270,6 +270,8 @@
 		MOAIDialogAndroid::Affirm ();
 		REGISTER_LUA_CLASS ( MOAIDialogAndroid );
 
+    REGISTER_LUA_CLASS ( MOAIAudioSamplerAndroid );
+
 #ifndef DISABLE_ADCOLONY
 		MOAIAdColonyAndroid::Affirm ();
 		REGISTER_LUA_CLASS ( MOAIAdColonyAndroid );
