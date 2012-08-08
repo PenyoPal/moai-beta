@@ -38,7 +38,8 @@
 	<!-- Moai -->
  	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
-		
+	<uses-permission android:name="android.permission.RECORD_AUDIO" />
+
 	<!-- EXTERNAL PERMISSIONS: Placeholder (DO NOT MOVE OR REMOVE) -->
 	
 	<supports-screens 
