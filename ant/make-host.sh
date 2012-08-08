@@ -89,9 +89,9 @@
 		sed -i$backup_ext s%"$2"%"$3"%g $1
 		rm -f $1$backup_ext
 	}
-		
-	required_libs="\"miscellaneous\""
-	
+
+	required_libs="\"miscellaneous\" \"audiolistener\""
+
 	if [ x"$adcolony_flags" == x ]; then
 		required_libs="$required_libs \"adcolony\""
 	fi

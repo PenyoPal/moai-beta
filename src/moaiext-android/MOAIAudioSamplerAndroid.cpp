@@ -382,11 +382,13 @@ void MOAIAudioSamplerAndroid::HandlePeriodicNotification ( ) {
 }
 
 /* Callback JNI Methods */
-extern "C" void Java_com_ziplinegames_moai_MoaiUpdateListener_AKUAudioListenerPeriodicNotification (
+extern "C" void Java_com_ziplinegames_moai_MoaiAudioListener_AKUAudioListenerPeriodicNotification (
     JNIEnv* env, jclass obj ) {
+  USLog::Print ( "Entering periodic notification handler" );
   currentInstance->HandlePeriodicNotification ();
 }
 
-extern "C" void Java_com_ziplinegames_moai_MoaiUpdateListener_AKUAudioListenerMarkerReached (
+extern "C" void Java_com_ziplinegames_moai_MoaiAudioListener_AKUAudioListenerMarkerReached (
     JNIEnv* env, jclass obj ) {
+  USLog::Print ( "Entering marker reached handler" );
 }
