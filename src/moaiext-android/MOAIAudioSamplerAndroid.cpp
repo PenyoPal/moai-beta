@@ -1,6 +1,8 @@
 #include "pch.h"
 #include <jni.h>
 
+#include <netinet/in.h>
+
 #include <moaiext-android/moaiext-jni.h>
 #include <moaiext-android/MOAIAudioSamplerAndroid.h>
 
@@ -19,6 +21,7 @@ MOAIAudioSamplerAndroid::MOAIAudioSamplerAndroid ( ) :
   mNumFrequency(0),
   numChannels(0),
   mNumChannels(0),
+  mBufferPosition(0),
   mBitEncoding(0),
   mMaxBufferSizeInBytes(0),
   mFramesPerSample(0),
@@ -66,13 +69,16 @@ MOAIAudioSamplerAndroid::~MOAIAudioSamplerAndroid ( ) {
 }
 
 int MOAIAudioSamplerAndroid::_setFrequency ( lua_State* L ) {
+  USLog::Print ( "Entering _setFrequency" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "UN" )
     ;
   self->mNumFrequency = state.GetValue < u32 >( 2, 44100 );
+  USLog::Print ( "Finished _setFrequency" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_setNumChannels ( lua_State* L ) {
+  USLog::Print ( "Entering _setNumChannels" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "UN" )
     ;
   self->numChannels = state.GetValue < u32 >(2, 2 );
@@ -107,10 +113,12 @@ int MOAIAudioSamplerAndroid::_setNumChannels ( lua_State* L ) {
   }
   self->mNumChannels = (u32)env->GetStaticIntField ( audioFmt, fid );
 
+  USLog::Print ( "Done _setNumChannels" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_prepareBuffer ( lua_State *L ) {
+  USLog::Print ( "Entering _prepareBuffer" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "UNN" )
     ;
   double sec = state.GetValue < float > ( 2, 1 );
@@ -148,10 +156,12 @@ int MOAIAudioSamplerAndroid::_prepareBuffer ( lua_State *L ) {
     /* TODO: Get a reference for the buffer? */
   }
 
+  USLog::Print ( "Done _prepareBuffer" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
+  USLog::Print ( "Entering _start" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
 
@@ -163,12 +173,14 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
     LOG_NO_CLASS( "android/media/AudioRecord" );
     return 0;
   }
+  USLog::Print ( "Created recorder" );
   jmethodID getBufSize = env->GetStaticMethodID ( recorder, "getMinBufferSize",
       "(III)I");
   if ( getBufSize == NULL ) {
     LOG_NO_FIELD( "getMinBufferSize" );
     return 0;
   }
+  USLog::Print ( "Getting min buffer size" );
   size_t minAryLen = ( size_t )env->CallStaticObjectMethod (
       recorder, getBufSize, self->mNumFrequency, self->mNumChannels, self->mBitEncoding
   );
@@ -176,12 +188,14 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
     self->mBufferAryLen = minAryLen;
   }
 
+  USLog::Print ( "Getting recorder constructor" );
   /* Try to create the recorder object */
   jmethodID cons = env->GetMethodID ( recorder, "<init>", "(IIIII)V" );
   if ( cons == NULL ) {
     USLog::Print ( "MOAIAudioSamplerAndroid: Unable to find constructor for AudioRecord" );
     return 0;
   }
+  USLog::Print ( "Getting audio source info" );
   jclass audioSrc = env->FindClass ( "android/media/MediaRecorder$AudioSource" );
   if ( audioSrc == NULL ) {
     LOG_NO_CLASS( "android/media/MediaRecorder$AudioSource" );
@@ -198,11 +212,16 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
       return 0;
     }
   }
+  USLog::Print ( "Setting audio source type" );
   u32 voiceRecogType = env->GetStaticIntField ( audioSrc, srcTypeFid );
+  USLog::Print ( "Creating audio recorder object with args %d %d %d %d %d",
+      voiceRecogType, self->mNumFrequency, self->mNumChannels,
+      self->mBitEncoding, self->mBufferAryLen );
   self->mAudioRecorder = env->NewObject ( recorder, cons,
       voiceRecogType, self->mNumFrequency, self->mNumChannels,
       self->mBitEncoding, self->mBufferAryLen );
   /* Catch exception */
+  USLog::Print ( "Trying to catch exception" );
   jthrowable exc = env->ExceptionOccurred();
   if ( exc ) {
     env->ExceptionDescribe ( );
@@ -210,50 +229,88 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
     USLog::Print ( "MOAIAudioSamplerAndroid: Exception trying to create AudioRecord" );
     return 0;
   }
+  if ( self->mAudioRecorder == NULL ) {
+    USLog::Print ( "Audio recorder is nulL!" );
+    return 0;
+  }
+  /*
+  jfieldID initedStateID = env->GetStaticFieldID ( recorder, "STATE_INITIALIZED", "I" );
+  u32 initedState = env->GetStaticIntField ( recorder, initedStateID );
+  jmethodID getStateID = env->GetMethodID ( recorder, "getState", "()I" );
+  if ( getStateID == NULL ) {
+    LOG_NO_METH ( "getState" );
+    return 0;
+  }
+  u32 recorderState = env->CallIntMethod ( self->mAudioRecorder, getStateID );
+  USLog::Print ( "Recorder state is %d", recorderState );
+  if ( recorderState != initedState ) {
+    USLog::Print ( "Recorder is not in an inited state!" );
+    return 0;
+  }
+  */
 
+  USLog::Print ( "Setting notification period" );
   /* Set a callback to periodically get the data */
+  /* Set the interval */
   jmethodID setNotificationPeriodID = env->GetMethodID (
       recorder, "setPositionNotificationPeriod", "(I)I" );
   if ( setNotificationPeriodID == NULL ) {
     LOG_NO_METH( "setPositionNotificationPeriod" );
     return 0;
   }
+  USLog::Print ( "Setting notification period to %d", self->mFramesPerSample / 10 );
   u32 success = env->CallIntMethod (
-      self->mAudioRecorder, setNotificationPeriodID, self->mFramesPerSample );
-  /* Set the interval */
-  jmethodID setUpdateListenerID = env->GetMethodID (
-      recorder, "setRecordPositionUpdateListener",
-      "(Landroid/media/AudioRecord/OnRecordPositionUpdateListener;Landroid/os/Handler;)V"
-  );
-  /* Create the handler object */
-  jclass posUpdateListener = env->FindClass (
-      "com/ziplinegames/moai/MoaiUpdateListener" );
-  if ( posUpdateListener == NULL ) {
-    LOG_NO_CLASS( "com/ziplinegames/moai/MoaiUpdateListener" );
+      self->mAudioRecorder, setNotificationPeriodID, self->mFramesPerSample / 10 );
+  USLog::Print ( "Got success code from setting period %d", success );
+  if ( success != 0 ) {
+    USLog::Print ( "Error setting notification period: %d", success );
     return 0;
   }
+  USLog::Print ( "Getting handler class" );
+  /* Create the handler object */
+  jclass posUpdateListener = env->FindClass (
+      "com/ziplinegames/moai/MoaiAudioListener" );
+  if ( posUpdateListener == NULL ) {
+    LOG_NO_CLASS( "com/ziplinegames/moai/MoaiAudioListener" );
+    return 0;
+  }
+  USLog::Print ( "Getting handler creater" );
   jmethodID createListenerID = env->GetStaticMethodID ( posUpdateListener, "createListener",
-      "()Landroid/media/AudioRecord/OnRecordPositionUpdateListener;" );
+      "()Landroid/media/AudioRecord$OnRecordPositionUpdateListener;" );
   if ( createListenerID == NULL ) {
     LOG_NO_METH( "createListener" );
     return 0;
   }
-  jobject listener = env->CallStaticObjectMethod ( posUpdateListener, createListenerID );
+  USLog::Print ( "Creating handler object" );
+  self->updateListener = env->CallStaticObjectMethod ( posUpdateListener, createListenerID );
+  if ( self->updateListener == NULL ) {
+    USLog::Print ( "failed to create listener object" );
+    return 0;
+  }
+  USLog::Print ( "Getting notification handler setter method" );
+  jmethodID setUpdateListenerID = env->GetMethodID (
+      recorder, "setRecordPositionUpdateListener",
+      "(Landroid/media/AudioRecord$OnRecordPositionUpdateListener;)V"
+  );
   /* Set the listener */
   if ( setUpdateListenerID == NULL ) {
     LOG_NO_METH( "setRecordPositionUpdateListener" );
     return 0;
   }
-  env->CallVoidMethod ( self->mAudioRecorder, setUpdateListenerID, listener );
+  USLog::Print ( "Setting handler to new object" );
+  env->CallVoidMethod ( self->mAudioRecorder, setUpdateListenerID, self->updateListener );
 
   /* Start recording */
+  USLog::Print ( "Getting starter method" );
   jmethodID startRecordingID = env->GetMethodID ( recorder, "startRecording", "()V" );
   if ( startRecordingID == NULL ) {
     LOG_NO_METH( "startRecording" );
     return 0;
   }
+  USLog::Print ( "Start recording" );
   env->CallVoidMethod ( self->mAudioRecorder, startRecordingID );
   /* Catch exception */
+  USLog::Print ( "Checking for exceptions" );
   exc = env->ExceptionOccurred();
   if ( exc ) {
     env->ExceptionDescribe ( );
@@ -264,10 +321,12 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
 
   self->isActive = true;
 
+  USLog::Print ( "Done _start" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_read ( lua_State* L ) {
+  USLog::Print ( "Entering _read" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
   cc8 *tn = state.GetValue < cc8 * > ( 2, "float" );
@@ -286,16 +345,69 @@ int MOAIAudioSamplerAndroid::_read ( lua_State* L ) {
     return 1;
   }
 
-  for ( u32 i = 0; i < self->mBufferAryLen; i++ ) {
-    /* TODO: Read audio out of buffer, return a lua table */
-  }
+  JNI_GET_ENV ( jvm, env );
 
+  jbyteArray readData = env->NewByteArray ( self->mBufferAryLen );
+
+  jclass recorder = env->FindClass ( "android/media/AudioRecord" );
+  if ( recorder == NULL ) {
+    LOG_NO_CLASS( "android/media/AudioRecord" );
+    lua_pushnil ( L );
+    return 1;
+  }
+  jmethodID readID = env->GetMethodID ( recorder, "read", "([BII)I" );
+  if ( readID == NULL ) {
+    LOG_NO_METH ( "read" );
+    lua_pushnil ( L );
+    return 1;
+  }
+  u32 numRead = env->CallIntMethod ( self->mAudioRecorder, readID,
+      readData, self->mBufferPosition, self->mBufferAryLen );
+  if ( numRead < 0 ) {
+    USLog::Print ( "Error reading data" );
+    lua_pushnil ( L );
+    return 1;
+  }
+  jboolean isCopy;
+  jbyte *buf = env->GetByteArrayElements ( readData, &isCopy );
+
+  if ( tnid == 255 ) {
+    short *outdata = (short*) malloc( sizeof(short) * numRead );
+    for ( int i = 0; i < numRead; i++ ) {
+      outdata[i] = ntohs( buf[i] );
+    }
+    lua_pushlstring ( L, (char*)outdata, sizeof(short) * numRead );
+    free( outdata );
+  } else {
+    lua_createtable ( L, numRead, 0 );
+    for ( int i = 0; i < numRead; i++ ) {
+      short sval = ntohs( buf[i] );
+      switch ( tnid ) {
+        case 0:
+          lua_pushnumber ( L, (double)( sval / 32768.0 ) );
+          break;
+        case 8:
+          lua_pushinteger ( L, (char)( sval / 256 ) );
+          break;
+        case 16:
+          lua_pushinteger ( L, sval );
+          break;
+      }
+      lua_rawseti ( L, -2, i + 1 );
+    }
+  }
+  self->mBufferPosition += numRead;
+  env->ReleaseByteArrayElements ( readData, buf, 0 );
+  return 1;
+
+  USLog::Print ( "Done _read" );
   /* If no data read in loop, return nil */
   lua_pushnil ( L );
   return 1;
 }
 
 int MOAIAudioSamplerAndroid::_stop ( lua_State* L ) {
+  USLog::Print ( "Entering _stop" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
 
@@ -325,27 +437,34 @@ int MOAIAudioSamplerAndroid::_stop ( lua_State* L ) {
   }
 
   self->isActive = false;
+  USLog::Print ( "Done _stop" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_pause ( lua_State* L ) {
+  USLog::Print ( "Entering _pause" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
   self->isActive = false;
+  USLog::Print ( "Done _pause" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_resume ( lua_State* L ) {
+  USLog::Print ( "Entering _resume" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
   self->isActive = true;
+  USLog::Print ( "Done _resume" );
   return 0;
 }
 
 int MOAIAudioSamplerAndroid::_flush ( lua_State* L ) {
+  USLog::Print ( "Entering _flush" );
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
   /* TODO: Flush the buffer of read samples */
+  USLog::Print ( "Done _flush" );
   return 0;
 }
 

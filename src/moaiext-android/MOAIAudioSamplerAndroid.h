@@ -25,9 +25,11 @@ class MOAIAudioSamplerAndroid : public virtual MOAINode {
     u32 numChannels;
     size_t mMaxBufferSizeInBytes;
     size_t mBufferAryLen;
+    size_t mBufferPosition;
     short **mBufferAry;
     size_t *mBufferReadSizeInBytes;
     jobject mAudioRecorder;
+    jobject updateListener;
 
     bool isActive;
   public:
