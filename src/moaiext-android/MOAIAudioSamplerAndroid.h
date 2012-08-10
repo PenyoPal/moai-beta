@@ -23,6 +23,8 @@ class MOAIAudioSamplerAndroid : public virtual MOAINode {
     u32 mBitEncoding;
     u32 mFramesPerSample;
     u32 numChannels;
+    u32 currentReadIndex;
+    u32 currentWriteIndex;
     size_t mMaxBufferSizeInBytes;
     size_t mBufferAryLen;
     size_t mBufferPosition;

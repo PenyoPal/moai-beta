@@ -23,6 +23,8 @@ MOAIAudioSamplerAndroid::MOAIAudioSamplerAndroid ( ) :
   mNumChannels(0),
   mBufferPosition(0),
   mBitEncoding(0),
+  currentReadIndex(0),
+  currentWriteIndex(0),
   mMaxBufferSizeInBytes(0),
   mFramesPerSample(0),
   mBufferAryLen(0),
@@ -153,7 +155,6 @@ int MOAIAudioSamplerAndroid::_prepareBuffer ( lua_State *L ) {
   for ( u32 i = 0; i < self->mBufferAryLen; ++i ) {
     self->mBufferAry[i] = (short*) malloc ( bufsize );
     assert ( self->mBufferAry[i] );
-    /* TODO: Get a reference for the buffer? */
   }
 
   USLog::Print ( "Done _prepareBuffer" );
@@ -233,72 +234,6 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
     USLog::Print ( "Audio recorder is nulL!" );
     return 0;
   }
-  /*
-  jfieldID initedStateID = env->GetStaticFieldID ( recorder, "STATE_INITIALIZED", "I" );
-  u32 initedState = env->GetStaticIntField ( recorder, initedStateID );
-  jmethodID getStateID = env->GetMethodID ( recorder, "getState", "()I" );
-  if ( getStateID == NULL ) {
-    LOG_NO_METH ( "getState" );
-    return 0;
-  }
-  u32 recorderState = env->CallIntMethod ( self->mAudioRecorder, getStateID );
-  USLog::Print ( "Recorder state is %d", recorderState );
-  if ( recorderState != initedState ) {
-    USLog::Print ( "Recorder is not in an inited state!" );
-    return 0;
-  }
-  */
-
-  USLog::Print ( "Setting notification period" );
-  /* Set a callback to periodically get the data */
-  /* Set the interval */
-  jmethodID setNotificationPeriodID = env->GetMethodID (
-      recorder, "setPositionNotificationPeriod", "(I)I" );
-  if ( setNotificationPeriodID == NULL ) {
-    LOG_NO_METH( "setPositionNotificationPeriod" );
-    return 0;
-  }
-  USLog::Print ( "Setting notification period to %d", self->mFramesPerSample / 10 );
-  u32 success = env->CallIntMethod (
-      self->mAudioRecorder, setNotificationPeriodID, self->mFramesPerSample / 10 );
-  USLog::Print ( "Got success code from setting period %d", success );
-  if ( success != 0 ) {
-    USLog::Print ( "Error setting notification period: %d", success );
-    return 0;
-  }
-  USLog::Print ( "Getting handler class" );
-  /* Create the handler object */
-  jclass posUpdateListener = env->FindClass (
-      "com/ziplinegames/moai/MoaiAudioListener" );
-  if ( posUpdateListener == NULL ) {
-    LOG_NO_CLASS( "com/ziplinegames/moai/MoaiAudioListener" );
-    return 0;
-  }
-  USLog::Print ( "Getting handler creater" );
-  jmethodID createListenerID = env->GetStaticMethodID ( posUpdateListener, "createListener",
-      "()Landroid/media/AudioRecord$OnRecordPositionUpdateListener;" );
-  if ( createListenerID == NULL ) {
-    LOG_NO_METH( "createListener" );
-    return 0;
-  }
-  USLog::Print ( "Creating handler object" );
-  self->updateListener = env->CallStaticObjectMethod ( posUpdateListener, createListenerID );
-  if ( self->updateListener == NULL ) {
-    USLog::Print ( "failed to create listener object" );
-    return 0;
-  }
-  USLog::Print ( "Getting notification handler setter method" );
-  jmethodID setUpdateListenerID = env->GetMethodID (
-      recorder, "setRecordPositionUpdateListener",
-      "(Landroid/media/AudioRecord$OnRecordPositionUpdateListener;)V"
-  );
-  /* Set the listener */
-  if ( setUpdateListenerID == NULL ) {
-    LOG_NO_METH( "setRecordPositionUpdateListener" );
-    return 0;
-  }
-  USLog::Print ( "Setting handler to new object" );
-  env->CallVoidMethod ( self->mAudioRecorder, setUpdateListenerID, self->updateListener );
 
   /* Start recording */
   USLog::Print ( "Getting starter method" );
@@ -321,6 +256,8 @@ int MOAIAudioSamplerAndroid::_start ( lua_State* L ) {
 
   self->isActive = true;
 
+  self->HandlePeriodicNotification ( );
+
   USLog::Print ( "Done _start" );
   return 0;
 }
@@ -330,6 +267,8 @@ int MOAIAudioSamplerAndroid::_read ( lua_State* L ) {
   MOAI_LUA_SETUP ( MOAIAudioSamplerAndroid, "U" )
     ;
   cc8 *tn = state.GetValue < cc8 * > ( 2, "float" );
+
+  self->HandlePeriodicNotification ( );
 
   int tnid = -1;
   if( strcmp( tn, "float" ) == 0 ){
@@ -345,60 +284,46 @@ int MOAIAudioSamplerAndroid::_read ( lua_State* L ) {
     return 1;
   }
 
-  JNI_GET_ENV ( jvm, env );
+  for ( u32 i = 0; i < self->mBufferAryLen; i++ ) {
+    u32 useInd = ( self->currentReadIndex + i ) % self->mBufferAryLen;
+    if ( self->mBufferReadSizeInBytes[useInd] > 0 ) {
+      short *data = self->mBufferAry[ useInd ];
+      int datanum = self->mBufferReadSizeInBytes[ useInd ] / sizeof(short);
 
-  jbyteArray readData = env->NewByteArray ( self->mBufferAryLen );
-
-  jclass recorder = env->FindClass ( "android/media/AudioRecord" );
-  if ( recorder == NULL ) {
-    LOG_NO_CLASS( "android/media/AudioRecord" );
-    lua_pushnil ( L );
-    return 1;
-  }
-  jmethodID readID = env->GetMethodID ( recorder, "read", "([BII)I" );
-  if ( readID == NULL ) {
-    LOG_NO_METH ( "read" );
-    lua_pushnil ( L );
-    return 1;
-  }
-  u32 numRead = env->CallIntMethod ( self->mAudioRecorder, readID,
-      readData, self->mBufferPosition, self->mBufferAryLen );
-  if ( numRead < 0 ) {
-    USLog::Print ( "Error reading data" );
-    lua_pushnil ( L );
-    return 1;
-  }
-  jboolean isCopy;
-  jbyte *buf = env->GetByteArrayElements ( readData, &isCopy );
-
-  if ( tnid == 255 ) {
-    short *outdata = (short*) malloc( sizeof(short) * numRead );
-    for ( int i = 0; i < numRead; i++ ) {
-      outdata[i] = ntohs( buf[i] );
-    }
-    lua_pushlstring ( L, (char*)outdata, sizeof(short) * numRead );
-    free( outdata );
-  } else {
-    lua_createtable ( L, numRead, 0 );
-    for ( int i = 0; i < numRead; i++ ) {
-      short sval = ntohs( buf[i] );
-      switch ( tnid ) {
-        case 0:
-          lua_pushnumber ( L, (double)( sval / 32768.0 ) );
-          break;
-        case 8:
-          lua_pushinteger ( L, (char)( sval / 256 ) );
-          break;
-        case 16:
-          lua_pushinteger ( L, sval );
-          break;
+      if ( tnid == 255 ) {
+        short *outdata = (short*) malloc( sizeof(short) * datanum );
+        for ( int i = 0; i < datanum; i++ ) {
+          outdata[i] = ntohs( data[i] );
+        }
+        lua_pushlstring ( L, (char*)outdata, sizeof(short) * datanum );
+        free( outdata );
+      } else {
+        lua_createtable ( L, datanum, 0 );
+        for ( int i = 0; i < datanum; i++ ) {
+          short sval = ntohs( data[i] );
+          switch ( tnid ) {
+            case 0:
+              lua_pushnumber ( L, (double)( sval / 32768.0 ) );
+              break;
+            case 8:
+              lua_pushinteger ( L, (char)( sval / 256 ) );
+              break;
+            case 16:
+              lua_pushinteger ( L, sval );
+              break;
+          }
+          lua_rawseti ( L, -2, i + 1 );
+        }
       }
-      lua_rawseti ( L, -2, i + 1 );
+      self->mBufferReadSizeInBytes[ useInd ] = 0;
+      self->currentReadIndex++;
+      if ( self->currentReadIndex >= self->mBufferAryLen ) {
+        self->currentReadIndex = 0;
+      }
+      USLog::Print ( "Returing from print with %d dataums", datanum );
+      return 1;
     }
   }
-  self->mBufferPosition += numRead;
-  env->ReleaseByteArrayElements ( readData, buf, 0 );
-  return 1;
 
   USLog::Print ( "Done _read" );
   /* If no data read in loop, return nil */
@@ -498,13 +423,77 @@ void MOAIAudioSamplerAndroid::RegisterLuaFuncs ( MOAILuaState& state ) {
 
 void MOAIAudioSamplerAndroid::HandlePeriodicNotification ( ) {
   USLog::Print ( "Time to flush data out" );
+
+  if ( this->isActive ) {
+
+    JNI_GET_ENV ( jvm, env );
+
+    jclass recorder = env->FindClass ( "android/media/AudioRecord" );
+    if ( recorder == NULL ) {
+      LOG_NO_CLASS( "android/media/AudioRecord" );
+      return;
+    }
+
+    /* Check recorder state */
+    jfieldID initedStateID = env->GetStaticFieldID ( recorder, "STATE_INITIALIZED", "I" );
+    u32 initedState = env->GetStaticIntField ( recorder, initedStateID );
+    jmethodID getStateID = env->GetMethodID ( recorder, "getState", "()I" );
+    if ( getStateID == NULL ) {
+      LOG_NO_METH ( "getState" );
+      return;
+    }
+    u32 recorderState = env->CallIntMethod ( this->mAudioRecorder, getStateID );
+    USLog::Print ( "Recorder state is %d", recorderState );
+    if ( recorderState != initedState ) {
+      USLog::Print ( "Recorder is not in an inited state!" );
+      return;
+    }
+
+    jmethodID readID = env->GetMethodID ( recorder, "read", "([BII)I" );
+    if ( readID == NULL ) {
+      LOG_NO_METH ( "read" );
+      return;
+    }
+    /* TODO: Which offset to read from? */
+    int numsamples = this->mMaxBufferSizeInBytes / sizeof(short);
+    USLog::Print ( "Attempting to read %d samples", numsamples );
+    USLog::Print ( "Max buffer size is %d, sizeof(short) = %d", this->mMaxBufferSizeInBytes, sizeof(short) );
+    jbyteArray readData = env->NewByteArray ( numsamples );
+    if ( readData == NULL ) {
+      USLog::Print ( "Failed to create byte array" );
+      return;
+    }
+    int numRead = env->CallIntMethod ( this->mAudioRecorder, readID,
+        readData, 0, numsamples );
+    if ( numRead < 0 ) {
+      USLog::Print ( "Error reading data: %d", numRead );
+      return;
+    }
+    USLog::Print ( "Read %d bytes from the java side", numRead );
+    jboolean isCopy;
+    jbyte *inbuf = env->GetByteArrayElements ( readData, &isCopy );
+
+    USLog::Print ( "Copying data from java-side to out" );
+    short *outbuf = this->mBufferAry[ this->currentWriteIndex ];
+    for ( u32 i = 0; i < numRead; i++) {
+      outbuf[i] = inbuf[i];
+    }
+    this->mBufferReadSizeInBytes[ this->currentWriteIndex ] = numRead;
+    this->currentWriteIndex++;
+    if ( this->currentWriteIndex >= this->mBufferAryLen ) {
+      this->currentWriteIndex = 0;
+    }
+    USLog::Print ( "Freeing java's array" );
+    env->ReleaseByteArrayElements ( readData, inbuf, 0 );
+  }
+  USLog::Print ( "Done getting data" );
 }
 
 /* Callback JNI Methods */
 extern "C" void Java_com_ziplinegames_moai_MoaiAudioListener_AKUAudioListenerPeriodicNotification (
     JNIEnv* env, jclass obj ) {
   USLog::Print ( "Entering periodic notification handler" );
-  currentInstance->HandlePeriodicNotification ();
+  //currentInstance->HandlePeriodicNotification ();
 }
 
 extern "C" void Java_com_ziplinegames_moai_MoaiAudioListener_AKUAudioListenerMarkerReached (
