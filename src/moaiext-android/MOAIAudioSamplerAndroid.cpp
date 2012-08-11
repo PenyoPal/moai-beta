@@ -286,6 +286,7 @@ int MOAIAudioSamplerAndroid::_read ( lua_State* L ) {
 
   for ( u32 i = 0; i < self->mBufferAryLen; i++ ) {
     u32 useInd = ( self->currentReadIndex + i ) % self->mBufferAryLen;
+    USLog::Print ( "Reading from %d (%d)", useInd, self->currentReadIndex );
     if ( self->mBufferReadSizeInBytes[useInd] > 0 ) {
       short *data = self->mBufferAry[ useInd ];
       int datanum = self->mBufferReadSizeInBytes[ useInd ] / sizeof(short);
@@ -449,7 +450,7 @@ void MOAIAudioSamplerAndroid::HandlePeriodicNotification ( ) {
       return;
     }
 
-    jmethodID readID = env->GetMethodID ( recorder, "read", "([BII)I" );
+    jmethodID readID = env->GetMethodID ( recorder, "read", "([SII)I" );
     if ( readID == NULL ) {
       LOG_NO_METH ( "read" );
       return;
@@ -457,10 +458,9 @@ void MOAIAudioSamplerAndroid::HandlePeriodicNotification ( ) {
     /* TODO: Which offset to read from? */
     int numsamples = this->mMaxBufferSizeInBytes / sizeof(short);
     USLog::Print ( "Attempting to read %d samples", numsamples );
-    USLog::Print ( "Max buffer size is %d, sizeof(short) = %d", this->mMaxBufferSizeInBytes, sizeof(short) );
-    jbyteArray readData = env->NewByteArray ( numsamples );
+    jshortArray readData = env->NewShortArray ( numsamples );
     if ( readData == NULL ) {
-      USLog::Print ( "Failed to create byte array" );
+      USLog::Print ( "Failed to create short array" );
       return;
     }
     int numRead = env->CallIntMethod ( this->mAudioRecorder, readID,
@@ -469,22 +469,23 @@ void MOAIAudioSamplerAndroid::HandlePeriodicNotification ( ) {
       USLog::Print ( "Error reading data: %d", numRead );
       return;
     }
-    USLog::Print ( "Read %d bytes from the java side", numRead );
+    USLog::Print ( "Read %d data points from the java side", numRead );
     jboolean isCopy;
-    jbyte *inbuf = env->GetByteArrayElements ( readData, &isCopy );
-
-    USLog::Print ( "Copying data from java-side to out" );
+    jshort *inbuf = env->GetShortArrayElements ( readData, &isCopy );
+    USLog::Print ( "Copying data from java-side to out to idx %d/%d",
+        this->currentWriteIndex, this->mBufferAryLen );
     short *outbuf = this->mBufferAry[ this->currentWriteIndex ];
     for ( u32 i = 0; i < numRead; i++) {
       outbuf[i] = inbuf[i];
     }
-    this->mBufferReadSizeInBytes[ this->currentWriteIndex ] = numRead;
+    USLog::Print ( "Finished copying data, setting read size" );
+    this->mBufferReadSizeInBytes[ this->currentWriteIndex ] = numRead * sizeof(short);
     this->currentWriteIndex++;
     if ( this->currentWriteIndex >= this->mBufferAryLen ) {
       this->currentWriteIndex = 0;
     }
     USLog::Print ( "Freeing java's array" );
-    env->ReleaseByteArrayElements ( readData, inbuf, 0 );
+    env->ReleaseShortArrayElements ( readData, inbuf, 0 );
   }
   USLog::Print ( "Done getting data" );
 }
